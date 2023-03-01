@@ -1,4 +1,4 @@
-package com.example.projecte_maps.Objects;
+package com.dam2.m08.Objects;
 
 import android.graphics.Bitmap;
 import android.location.Location;

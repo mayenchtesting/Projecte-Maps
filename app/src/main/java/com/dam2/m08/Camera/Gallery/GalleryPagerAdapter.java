@@ -1,23 +1,15 @@
-package com.example.projecte_maps.Camera.Gallery;
+package com.dam2.m08.Camera.Gallery;
 
 import android.content.Context;
-import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
-import android.media.ThumbnailUtils;
-import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
-import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.viewpager.widget.PagerAdapter;
 
-import com.example.projecte_maps.Objects.AppImage;
+import com.dam2.m08.Objects.AppImage;
 import com.example.projecte_maps.R;
 
 import java.util.ArrayList;

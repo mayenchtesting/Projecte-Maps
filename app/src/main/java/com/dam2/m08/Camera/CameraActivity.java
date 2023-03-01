@@ -1,4 +1,4 @@
-package com.example.projecte_maps.Camera;
+package com.dam2.m08.Camera;
 
 import android.Manifest;
 import android.content.Context;
@@ -23,6 +23,7 @@ import android.media.ImageReader;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.media.ThumbnailUtils;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -39,7 +40,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-import com.example.projecte_maps.Camera.Gallery.GallerySliderActivity;
+import com.dam2.m08.Camera.Gallery.GallerySliderActivity;
 import com.example.projecte_maps.R;
 
 import java.io.File;
@@ -202,7 +203,9 @@ public class CameraActivity extends AppCompatActivity {
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-        mediaRecorder.setOutputFile(file);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            mediaRecorder.setOutputFile(file);
+        }
         mediaRecorder.setVideoEncodingBitRate(1000000);
         mediaRecorder.setVideoFrameRate(30);
         mediaRecorder.setVideoSize(videoSize.getWidth(), videoSize.getHeight());
@@ -353,8 +356,10 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void save(byte[] bytes) throws IOException {
-        try (OutputStream output = Files.newOutputStream(file.toPath())) {
-            output.write(bytes);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            try (OutputStream output = Files.newOutputStream(file.toPath())) {
+                output.write(bytes);
+            }
         }
     }
 

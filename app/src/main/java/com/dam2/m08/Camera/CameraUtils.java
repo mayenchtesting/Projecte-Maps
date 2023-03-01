@@ -1,4 +1,4 @@
-package com.example.projecte_maps.Camera;
+package com.dam2.m08.Camera;
 
 import android.content.Context;
 import android.util.Size;

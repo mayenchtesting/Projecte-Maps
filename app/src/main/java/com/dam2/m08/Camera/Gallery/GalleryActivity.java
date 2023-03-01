@@ -1,11 +1,11 @@
-package com.example.projecte_maps.Camera.Gallery;
+package com.dam2.m08.Camera.Gallery;
 
 import android.os.Bundle;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.projecte_maps.Camera.CameraUtils;
+import com.dam2.m08.Camera.CameraUtils;
 import com.example.projecte_maps.R;
 
 public class GalleryActivity extends AppCompatActivity {

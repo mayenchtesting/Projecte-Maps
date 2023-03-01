@@ -1,4 +1,4 @@
-package com.example.projecte_maps.Camera.Gallery;
+package com.dam2.m08.Camera.Gallery;
 
 import android.os.Bundle;
 
@@ -6,9 +6,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager.widget.ViewPager;
 
-import com.example.projecte_maps.Objects.AppImage;
+import com.dam2.m08.Objects.AppImage;
 import com.example.projecte_maps.R;
-import com.example.projecte_maps.Camera.CameraUtils;
 
 import java.util.ArrayList;
 
