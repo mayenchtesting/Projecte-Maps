@@ -38,7 +38,7 @@
                 android:value="" />
         </activity>
         <activity
-            android:name=".Camera.Gallery.GalleryActivity"
+            android:name=".Camera.Gallery.GallerySliderActivity"
             android:exported="false">
             <meta-data
                 android:name="android.app.lib_name"
@@ -46,6 +46,13 @@
         </activity>
         <activity
             android:name=".Camera.Gallery.VideoActivity"
+            android:exported="false">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+        <activity
+            android:name=".Camera.Gallery.GalleryActivity"
             android:exported="false">
             <meta-data
                 android:name="android.app.lib_name"

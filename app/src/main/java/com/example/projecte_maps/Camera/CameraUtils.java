@@ -6,7 +6,7 @@ import android.util.Size;
 import java.io.File;
 import java.util.ArrayList;
 
-public class CameraUtils { // cambiar por utils firebase (insert, update, get, ¿delete?)
+public class CameraUtils {
     public static String FOLDER_NAME = "FotosCamera2";
 
     public static Size THUBNAIL_SIZE = new Size(75, 100);

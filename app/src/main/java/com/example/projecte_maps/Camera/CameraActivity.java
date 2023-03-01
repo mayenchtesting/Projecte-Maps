@@ -39,7 +39,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-import com.example.projecte_maps.Camera.Gallery.GalleryActivity;
+import com.example.projecte_maps.Camera.Gallery.GallerySliderActivity;
 import com.example.projecte_maps.R;
 
 import java.io.File;
@@ -414,7 +414,7 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void openGallery() {
-        startActivity(new Intent(CameraActivity.this, GalleryActivity.class));
+        startActivity(new Intent(CameraActivity.this, GallerySliderActivity.class));
     }
 
     private void showMessage(String message) {

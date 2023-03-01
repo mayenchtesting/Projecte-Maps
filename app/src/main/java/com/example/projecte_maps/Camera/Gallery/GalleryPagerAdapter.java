@@ -17,24 +17,25 @@ import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.viewpager.widget.PagerAdapter;
 
+import com.example.projecte_maps.Objects.AppImage;
 import com.example.projecte_maps.R;
 
 import java.util.ArrayList;
 
 public class GalleryPagerAdapter extends PagerAdapter {
     Context context;
-    ArrayList<String> filePaths;
+    ArrayList<AppImage> images;
     LayoutInflater layoutInflater;
 
-    public GalleryPagerAdapter(Context context, ArrayList<String> imagePaths) {
+    public GalleryPagerAdapter(Context context, ArrayList<AppImage> images) {
         this.context = context;
-        this.filePaths = imagePaths;
+        this.images = images;
         this.layoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
 
     @Override
     public int getCount() {
-        return filePaths.size();
+        return images.size();
     }
 
     @Override
@@ -45,29 +46,30 @@ public class GalleryPagerAdapter extends PagerAdapter {
     @NonNull
     @Override
     public Object instantiateItem(@NonNull ViewGroup container, int position) {
-        View itemView = layoutInflater.inflate(R.layout.gallery_item, container, false);
-        String path = filePaths.get(position);
-        ImageView imageView = itemView.findViewById(R.id.galleryImage);
-        Bitmap bitmap;
-        if (path.endsWith(".mp4")) {
-            ImageButton btnPlay = itemView.findViewById(R.id.btnPlay);
-            btnPlay.setVisibility(View.VISIBLE);
-            btnPlay.setOnClickListener(l -> {
-                Intent i = new Intent(context, VideoActivity.class);
-                i.putExtra("path", path);
-                context.startActivity(i);
-            });
-            bitmap = ThumbnailUtils.createVideoThumbnail(path, MediaStore.Images.Thumbnails.FULL_SCREEN_KIND);
-        } else {
-            Bitmap img = BitmapFactory.decodeFile(path);
-            Matrix matrix = new Matrix();
-            matrix.postRotate(90);
-            bitmap = Bitmap.createBitmap(img, 0, 0, img.getWidth(), img.getHeight(), matrix, true);
-        }
-        imageView.setImageBitmap(bitmap);
-        imageView.setContentDescription(path);
-        container.addView(itemView);
-        return itemView;
+//        View itemView = layoutInflater.inflate(R.layout.gallery_item, container, false);
+//        AppImage appimage = images.get(position);
+//        ImageView imageView = itemView.findViewById(R.id.galleryImage);
+//        Bitmap bitmap;
+//        if (appimage.endsWith(".mp4")) {
+//            ImageButton btnPlay = itemView.findViewById(R.id.btnPlay);
+//            btnPlay.setVisibility(View.VISIBLE);
+//            btnPlay.setOnClickListener(l -> {
+//                Intent i = new Intent(context, VideoActivity.class);
+//                i.putExtra("path", path);
+//                context.startActivity(i);
+//            });
+//            bitmap = ThumbnailUtils.createVideoThumbnail(path, MediaStore.Images.Thumbnails.FULL_SCREEN_KIND);
+//        } else {
+//            Bitmap img = BitmapFactory.decodeFile(path);
+//            Matrix matrix = new Matrix();
+//            matrix.postRotate(90);
+//            bitmap = Bitmap.createBitmap(img, 0, 0, img.getWidth(), img.getHeight(), matrix, true);
+//        }
+//        imageView.setImageBitmap(bitmap);
+//        imageView.setContentDescription(path);
+//        container.addView(itemView);
+//        return itemView;
+        return layoutInflater.inflate(R.layout.gallery_item, container, false); // borrar
     }
 
     @Override
