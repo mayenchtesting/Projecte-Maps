@@ -24,13 +24,13 @@ public class SignupActivity extends AppCompatActivity
     TextInputEditText etRegPassword;
     TextView tvLoginHere;
     Button btnRegister;
-
     FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
-        try {
+        try
+        {
             super.onCreate(savedInstanceState);
             setContentView(R.layout.activity_signup);
 
@@ -43,7 +43,8 @@ public class SignupActivity extends AppCompatActivity
 
             btnRegister.setOnClickListener(view -> { createUser(); });
 
-            tvLoginHere.setOnClickListener(view -> {
+            tvLoginHere.setOnClickListener(view ->
+            {
                 startActivity(new Intent(SignupActivity.this, LoginActivity.class));
             });
         } catch (Exception e) {
@@ -77,10 +78,14 @@ public class SignupActivity extends AppCompatActivity
                         if (task.isSuccessful())
                         {
                             //new AuthCRUD().addLoggedUser();
-                            Toast.makeText(SignupActivity.this, "L'usuari ha iniciat sessió correctament", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(SignupActivity.this, "L'usuari s'ha registrat correctament", Toast.LENGTH_SHORT).show();
                             startActivity(new Intent(SignupActivity.this, LoginActivity.class));
                         }
-                        else { Toast.makeText(SignupActivity.this, "Error de registre: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show(); }
+                        else
+                        {
+                            Toast.makeText(SignupActivity.this, "Error de registre: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                            System.out.println(task.getException().getMessage());
+                        }
                     }
                 });
             }

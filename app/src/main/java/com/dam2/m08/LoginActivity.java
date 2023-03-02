@@ -24,7 +24,6 @@ public class LoginActivity extends AppCompatActivity
     TextInputEditText etLoginPassword;
     TextView tvRegisterHere;
     Button btnLogin;
-
     FirebaseAuth mAuth;
 
     @Override
@@ -41,18 +40,13 @@ public class LoginActivity extends AppCompatActivity
             btnLogin = findViewById(R.id.btnLogin);
 
             mAuth = FirebaseAuth.getInstance();
-            //AuthCRUD auth = new AuthCRUD();
 
             btnLogin.setOnClickListener(view -> { loginUser(); });
             tvRegisterHere.setOnClickListener(view ->{
                 startActivity(new Intent(LoginActivity.this, SignupActivity.class));
             });
-            //boolean hasMaxUsers = auth.hasMaxUsers();
             tvRegisterHere.setVisibility(View.VISIBLE);
-            //tvRegisterHere.setEnabled(!hasMaxUsers);
 
-            etLoginEmail.setText("jmarinlluset@gmail.com");
-            etLoginPassword.setText("Jmll20192020");
         } catch (Exception e) {
             ShowError.showError(this, e.getMessage());
         }
