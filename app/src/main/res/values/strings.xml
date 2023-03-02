@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">Projecte-Maps</string>
+    <string name="login_title">@string/login</string>
+    <string name="register_title">@string/register</string>
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Password</string>
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="already_registered">Already registered?</string>
+    <string name="not_registered">Not registered yet?</string>
+    <string name="login_here">Login here</string>
+    <string name="register_here">Register here</string>
 </resources>
