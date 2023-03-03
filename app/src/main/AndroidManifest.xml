@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
     <uses-feature android:name="android.hardware.camera2.full" />
 
     <application
@@ -17,6 +18,21 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ProjecteMaps"
         tools:targetApi="31">
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCpJtRfkJ0Ka0xr4yg7zVCkyEtk-CewwDM" />
+
+        <activity
+            android:name="com.dam2.m08.MapsActivity"
+            android:exported="true"
+            android:label="@string/title_activity_maps">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <activity
             android:name="com.dam2.m08.SignupActivity"
             android:exported="false">
@@ -32,19 +48,6 @@
                 android:value="" />
         </activity>
         <activity
-            android:name="com.dam2.m08.MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-
-            <meta-data
-                android:name="android.app.lib_name"
-                android:value="" />
-        </activity>
-        <activity
             android:name="com.dam2.m08.Camera.CameraActivity"
             android:exported="false">
             <meta-data
@@ -72,48 +75,6 @@
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
-        <!--<activity
-            android:name="com.dam2.m08.MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-
-            <meta-data
-                android:name="android.app.lib_name"
-                android:value="" />
-        </activity>
-        <activity
-            android:name="com.dam2.m08.Camera.CameraActivity"
-            android:exported="false">
-            <meta-data
-                android:name="android.app.lib_name"
-                android:value="" />
-        </activity>
-        <activity
-            android:name="com.dam2.m08.Camera.Gallery.GallerySliderActivity"
-            android:exported="false">
-            <meta-data
-                android:name="android.app.lib_name"
-                android:value="" />
-        </activity>
-        <activity
-            android:name="com.dam2.m08.Camera.Gallery.VideoActivity"
-            android:exported="false">
-            <meta-data
-                android:name="android.app.lib_name"
-                android:value="" />
-        </activity>
-        <activity
-            android:name="com.dam2.m08.Camera.Gallery.GalleryActivity"
-            android:exported="false">
-            <meta-data
-                android:name="android.app.lib_name"
-                android:value="" />
-        </activity>-->
-
     </application>
 
 </manifest>
