@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
@@ -22,36 +21,37 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
-import android.media.ThumbnailUtils;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.provider.MediaStore;
 import android.util.Size;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.ImageButton;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import com.dam2.m08.Camera.Gallery.GallerySliderActivity;
+import com.dam2.m08.CurrentUser;
+import com.dam2.m08.Llamadas.AppImageCRUD;
+import com.dam2.m08.Objects.AppImage;
+import com.dam2.m08.Messages;
+import com.dam2.m08.Utils;
 import com.example.projecte_maps.R;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -104,6 +104,8 @@ public class CameraActivity extends AppCompatActivity {
         }
     };
 
+    AppImageCRUD db;
+
     private void startBackgroundThread() {
         mBackgroundThread = new HandlerThread("camera_background_thread");
         mBackgroundThread.start();
@@ -117,7 +119,7 @@ public class CameraActivity extends AppCompatActivity {
             mBackgroundThread = null;
             mBackgroundHandler = null;
         } catch (InterruptedException e) {
-            showMessage(e.getLocalizedMessage());
+            Messages.showMessage(this, e.getLocalizedMessage());
         }
     }
 
@@ -151,7 +153,7 @@ public class CameraActivity extends AppCompatActivity {
                 //createMediaRecorder();
             }
         } catch (CameraAccessException e) {
-            showMessage(e.getLocalizedMessage());
+            Messages.showMessage(this, e.getLocalizedMessage());
         }
     }
 
@@ -175,37 +177,35 @@ public class CameraActivity extends AppCompatActivity {
 
                     @Override
                     public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-                        showMessage("Error en la configuració de la camera");
+                        Messages.showMessage(CameraActivity.this, "Error en la configuració de la camera");
                     }
                 };
                 cameraDevice.createCaptureSession(Collections.singletonList(surface), stateCallback, null);
             }
         } catch (CameraAccessException e) {
-            showMessage(e.getLocalizedMessage());
+            Messages.showMessage(this, e.getLocalizedMessage());
         }
     }
 
     private void updatePreview() {
         if (cameraDevice == null) {
-            showMessage("Error amb la preview de la imatge.");
+            Messages.showMessage(this, "Error amb la preview de la imatge.");
         }
         captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
         try {
             cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
         } catch (CameraAccessException e) {
-            showMessage(e.getLocalizedMessage());
+            Messages.showMessage(this, e.getLocalizedMessage());
         }
     }
 
     private void createMediaRecorder() throws IOException {
-        setFile(false);
+        setFile();
         mediaRecorder = new MediaRecorder();
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            mediaRecorder.setOutputFile(file);
-        }
+        mediaRecorder.setOutputFile(file);
         mediaRecorder.setVideoEncodingBitRate(1000000);
         mediaRecorder.setVideoFrameRate(30);
         mediaRecorder.setVideoSize(videoSize.getWidth(), videoSize.getHeight());
@@ -222,8 +222,7 @@ public class CameraActivity extends AppCompatActivity {
                 btnTakePhoto.setEnabled(false);
             }
             if (isStoragePermissionGranted()) {
-                try {
-                    ImageReader reader = ImageReader.newInstance(imageSize.getWidth(), imageSize.getHeight(), ImageFormat.JPEG, 1);
+                try (ImageReader reader = ImageReader.newInstance(imageSize.getWidth(), imageSize.getHeight(), ImageFormat.JPEG, 1)) {
                     List<Surface> outputSurfaces = new ArrayList<>(2);
                     outputSurfaces.add(reader.getSurface());
                     outputSurfaces.add(new Surface(textureView.getSurfaceTexture()));
@@ -232,16 +231,14 @@ public class CameraActivity extends AppCompatActivity {
                     captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
                     int rotation = getWindowManager().getDefaultDisplay().getRotation();
                     captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, orientations.get(rotation));
-                    setFile(true);
                     ImageReader.OnImageAvailableListener readerListener = r -> {
                         try (Image image = reader.acquireLatestImage()) {
                             ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                             byte[] bytes = new byte[buffer.capacity()];
                             buffer.get(bytes);
                             save(bytes);
-                            runOnUiThread(this::setThumbnail);
                         } catch (IOException e) {
-                            showMessage(e.getLocalizedMessage());
+                            Messages.showMessage(this, e.getLocalizedMessage());
                         }
                     };
                     reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
@@ -249,7 +246,6 @@ public class CameraActivity extends AppCompatActivity {
                         @Override
                         public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
                             super.onCaptureCompleted(session, request, result);
-                            showMessage("S'ha guardat la imatge: " + file.getName());
                             createCameraPreview();
                         }
                     };
@@ -259,13 +255,13 @@ public class CameraActivity extends AppCompatActivity {
                             try {
                                 session.capture(captureBuilder.build(), captureCallback, mBackgroundHandler);
                             } catch (CameraAccessException e) {
-                                showMessage(e.getLocalizedMessage());
+                                Messages.showMessage(CameraActivity.this, e.getLocalizedMessage());
                             }
                         }
 
                         @Override
                         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-                            showMessage("Error en la configuració de la camera");
+                            Messages.showMessage(CameraActivity.this, "Error en la configuració de la camera");
                             createCameraPreview();
                         }
                     };
@@ -273,7 +269,7 @@ public class CameraActivity extends AppCompatActivity {
                     mediaPlayer = MediaPlayer.create(this, R.raw.photo_sound);
                     mediaPlayer.start();
                 } catch (CameraAccessException e) {
-                    showMessage(e.getLocalizedMessage());
+                    Messages.showMessage(this, e.getLocalizedMessage());
                 }
             }
         }
@@ -305,7 +301,7 @@ public class CameraActivity extends AppCompatActivity {
 
                     @Override
                     public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-                        showMessage("Error en la configuració de la camera");
+                        Messages.showMessage(CameraActivity.this, "Error en la configuració de la camera");
                     }
                 };
                 cameraDevice.createCaptureSession(Arrays.asList(previewSurface, recordSurface), stateCallback, null);
@@ -314,7 +310,7 @@ public class CameraActivity extends AppCompatActivity {
                 mediaPlayer.start();
             }
         } catch (IOException | CameraAccessException e) {
-            showMessage(e.getLocalizedMessage());
+            Messages.showMessage(this, e.getLocalizedMessage());
         }
     }
 
@@ -344,23 +340,33 @@ public class CameraActivity extends AppCompatActivity {
         return manager.getCameraIdList()[0];
     }
 
-    private void setFile(boolean img) {
+    private void setFile() {
         file = null;
-        File folder = new File(CameraUtils.FOLDER_NAME);
+        File folder = new File(Utils.FOLDER_NAME);
         if (!folder.exists()) {
             folder.mkdirs();
         }
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date());
-        String imageFileName = img ? "IMG_" + timeStamp + ".jpg" : "REC_" + timeStamp + ".mp4";
-        file = new File(getExternalFilesDir(CameraUtils.FOLDER_NAME), "/" + imageFileName);
+        String imageFileName = "REC_" + timeStamp + ".mp4";
+        file = new File(getExternalFilesDir(Utils.FOLDER_NAME), "/" + imageFileName);
     }
 
     private void save(byte[] bytes) throws IOException {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            try (OutputStream output = Files.newOutputStream(file.toPath())) {
-                output.write(bytes);
-            }
-        }
+        // localizar
+        AppImage img = new AppImage(
+                Utils.compress(Utils.getBitmap(bytes)),
+                13, // cambiar localizacion
+                31, // cambiar localizacion
+                LocalDateTime.now(),
+                CurrentUser.user.getEmail());
+        db.insert(img, task -> {
+                    if (task.isSuccessful()) {
+                        Messages.showMessage(CameraActivity.this, "Imagen guardada");
+                        setThumbnail();
+                    } else {
+                        Messages.showMessage(CameraActivity.this, "Error al guardar la imagen");
+                    }
+                });
     }
 
     private boolean isStoragePermissionGranted() {
@@ -372,31 +378,22 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void setThumbnail() {
-        ArrayList<String> paths = CameraUtils.getImagePaths(this);
-        Bitmap thumbnail = null;
-        if (paths.size() > 0) {
-            String path = paths.get(0);
-            Bitmap image;
-            if (path.endsWith(".mp4")) {
-                image = ThumbnailUtils.createVideoThumbnail(path, MediaStore.Images.Thumbnails.MINI_KIND);
+        db.get(task -> {
+            if (task.isSuccessful()) {
+                ArrayList<AppImage> imgList = db.collectionToAppImageList(task.getResult());
+                if (imgList.size() > 0) {
+                    imgList.sort(Comparator.comparing(AppImage::getDate).reversed());
+                    Bitmap img = imgList.get(0).getThumbnail();
+                    Matrix m = new Matrix();
+                    m.postRotate(90);
+                    Bitmap thumbnail = Bitmap.createBitmap(img, 0, 0, img.getWidth(), img.getHeight(), m, true);
+                    CameraActivity.this.runOnUiThread(() -> btnOpenGallery.setImageBitmap(thumbnail));
+                }
             } else {
-                Matrix m = new Matrix();
-                m.postRotate(90);
-                image = BitmapFactory.decodeFile(path);
-                image = Bitmap.createBitmap(image,
-                        0,
-                        0,
-                        image.getWidth(),
-                        image.getHeight(),
-                        m,
-                        true);
+                Messages.showMessage(CameraActivity.this, "error en getAll");
             }
-            thumbnail = Bitmap.createScaledBitmap(image,
-                    CameraUtils.THUBNAIL_SIZE.getWidth(),
-                    CameraUtils.THUBNAIL_SIZE.getHeight(),
-                    true);
-        }
-        btnOpenGallery.setImageBitmap(thumbnail);
+        });
+        
     }
 
     private void changeVideoButton(boolean stop) {
@@ -420,10 +417,6 @@ public class CameraActivity extends AppCompatActivity {
 
     private void openGallery() {
         startActivity(new Intent(CameraActivity.this, GallerySliderActivity.class));
-    }
-
-    private void showMessage(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -450,10 +443,11 @@ public class CameraActivity extends AppCompatActivity {
             orientations.put(Surface.ROTATION_270, 270);
 
             mediaPlayer = new MediaPlayer();
+            db = new AppImageCRUD(CurrentUser.user.getEmail());
 
             setThumbnail();
         } catch (Exception e) {
-            showMessage(e.getLocalizedMessage());
+            Messages.showMessage(this, e.getLocalizedMessage());
         }
     }
 
@@ -477,7 +471,7 @@ public class CameraActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_PERMISSION_CODE) {
             if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-                showMessage("No pots utilitzar l'app sense otorgar-li permisos necessaris.");
+                Messages.showMessage(this, "No pots utilitzar l'app sense otorgar-li permisos necessaris.");
                 finish();
             }
         }
