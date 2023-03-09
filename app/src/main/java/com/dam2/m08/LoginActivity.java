@@ -11,12 +11,14 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.dam2.m08.Camera.CameraActivity;
 import com.example.projecte_maps.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class LoginActivity extends AppCompatActivity
 {
@@ -43,10 +45,8 @@ public class LoginActivity extends AppCompatActivity
             mAuth = FirebaseAuth.getInstance();
             //AuthCRUD auth = new AuthCRUD();
 
-            btnLogin.setOnClickListener(view -> { loginUser(); });
-            tvRegisterHere.setOnClickListener(view ->{
-                startActivity(new Intent(LoginActivity.this, SignupActivity.class));
-            });
+            btnLogin.setOnClickListener(view -> loginUser());
+            tvRegisterHere.setOnClickListener(view -> startActivity(new Intent(LoginActivity.this, SignupActivity.class)));
             //boolean hasMaxUsers = auth.hasMaxUsers();
             tvRegisterHere.setVisibility(View.VISIBLE);
             //tvRegisterHere.setEnabled(!hasMaxUsers);
@@ -54,7 +54,7 @@ public class LoginActivity extends AppCompatActivity
             etLoginEmail.setText("jmarinlluset@gmail.com");
             etLoginPassword.setText("Jmll20192020");
         } catch (Exception e) {
-            ShowError.showError(this, e.getMessage());
+            Messages.showMessage(this, e.getMessage());
         }
     }
 
@@ -77,22 +77,18 @@ public class LoginActivity extends AppCompatActivity
             }
             else
             {
-                mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(new OnCompleteListener<AuthResult>()
-                {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task)
+                mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(task -> {
+                    if (task.isSuccessful())
                     {
-                        if (task.isSuccessful())
-                        {
-                            Toast.makeText(LoginActivity.this, "L'usuari ha iniciat sessió correctament", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                        }
-                        else{ Toast.makeText(LoginActivity.this, "Error d'inici de sessió: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show(); }
+                        Messages.showMessage(LoginActivity.this, "L'usuari ha iniciat sessió correctament");
+                        CurrentUser.user = mAuth.getCurrentUser();
+                        startActivity(new Intent(LoginActivity.this, CameraActivity.class));
                     }
+                    else{ Messages.showMessage(LoginActivity.this, "Error d'inici de sessió: " + task.getException().getMessage()); }
                 });
             }
         }
-        catch (Exception e) { ShowError.showError(this, e.getMessage()); }
+        catch (Exception e) { Messages.showMessage(this, e.getMessage()); }
     }
 
 }

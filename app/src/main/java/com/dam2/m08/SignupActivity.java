@@ -41,13 +41,11 @@ public class SignupActivity extends AppCompatActivity
 
             mAuth = FirebaseAuth.getInstance();
 
-            btnRegister.setOnClickListener(view -> { createUser(); });
+            btnRegister.setOnClickListener(view -> createUser());
 
-            tvLoginHere.setOnClickListener(view -> {
-                startActivity(new Intent(SignupActivity.this, LoginActivity.class));
-            });
+            tvLoginHere.setOnClickListener(view -> startActivity(new Intent(SignupActivity.this, LoginActivity.class)));
         } catch (Exception e) {
-            ShowError.showError(this, e.getMessage());
+            Messages.showMessage(this, e.getMessage());
         }
     }
 
@@ -69,23 +67,18 @@ public class SignupActivity extends AppCompatActivity
             }
             else
             {
-                mAuth.createUserWithEmailAndPassword(email,password).addOnCompleteListener(new OnCompleteListener<AuthResult>()
-                {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task)
+                mAuth.createUserWithEmailAndPassword(email,password).addOnCompleteListener(task -> {
+                    if (task.isSuccessful())
                     {
-                        if (task.isSuccessful())
-                        {
-                            //new AuthCRUD().addLoggedUser();
-                            Toast.makeText(SignupActivity.this, "L'usuari ha iniciat sessió correctament", Toast.LENGTH_SHORT).show();
-                            startActivity(new Intent(SignupActivity.this, LoginActivity.class));
-                        }
-                        else { Toast.makeText(SignupActivity.this, "Error de registre: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show(); }
+                        //new AuthCRUD().addLoggedUser();
+                        Toast.makeText(SignupActivity.this, "L'usuari ha iniciat sessió correctament", Toast.LENGTH_SHORT).show();
+                        startActivity(new Intent(SignupActivity.this, LoginActivity.class));
                     }
+                    else { Toast.makeText(SignupActivity.this, "Error de registre: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show(); }
                 });
             }
         } catch (Exception e) {
-            ShowError.showError(this, e.getMessage());
+            Messages.showMessage(this, e.getMessage());
         }
     }
 }
