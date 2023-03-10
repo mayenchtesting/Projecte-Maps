@@ -82,6 +82,7 @@ public class LoginActivity extends AppCompatActivity
                     {
                         Messages.showMessage(LoginActivity.this, "L'usuari ha iniciat sessió correctament");
                         CurrentUser.user = mAuth.getCurrentUser();
+                        AppImageList.getImageList();
                         startActivity(new Intent(LoginActivity.this, CameraActivity.class));
                     }
                     else{ Messages.showMessage(LoginActivity.this, "Error d'inici de sessió: " + task.getException().getMessage()); }

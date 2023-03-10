@@ -80,7 +80,8 @@ public class CameraActivity extends AppCompatActivity {
     private MediaPlayer mediaPlayer;
     private final TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
         @Override
-        public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) { openCamera(width, height); }
+        public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
+            openCamera(width, height); }
         @Override
         public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, int width, int height) {}
         @Override
