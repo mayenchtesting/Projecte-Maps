@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
@@ -22,13 +21,10 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
-import android.media.ThumbnailUtils;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.provider.MediaStore;
 import android.util.Size;
 import android.view.Surface;
 import android.view.TextureView;
@@ -40,18 +36,24 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-import com.dam2.m08.Camera.Gallery.GallerySliderActivity;
+import com.dam2.m08.AppImageList;
+import com.dam2.m08.Camera.Gallery.GalleryActivity;
+import com.dam2.m08.CurrentUser;
+import com.dam2.m08.Llamadas.AppImageCRUD;
+import com.dam2.m08.Messages;
+import com.dam2.m08.Objects.AppImage;
+import com.dam2.m08.Utils;
 import com.example.projecte_maps.R;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -65,6 +67,8 @@ public class CameraActivity extends AppCompatActivity {
     private ImageButton btnBack;
 
     private HashMap<Integer, Integer> orientations;
+
+    private String cameraId;
     private CameraDevice cameraDevice;
     private CameraCaptureSession cameraCaptureSession;
     private CaptureRequest.Builder captureRequestBuilder;
@@ -73,12 +77,13 @@ public class CameraActivity extends AppCompatActivity {
     private Size videoSize;
     private int totalRotation;
     private File file;
+    private File folder;
     private final int REQUEST_PERMISSION_CODE = 13;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
-
+    private AppImageCRUD db;
     private MediaPlayer mediaPlayer;
-    private final TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
+    private TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
         @Override
         public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) { openCamera(width, height); }
         @Override
@@ -133,7 +138,7 @@ public class CameraActivity extends AppCompatActivity {
         }
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
-            String cameraId = getFirstForwardCamera(manager);
+            cameraId = getFirstForwardCamera(manager);
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
             int deviceOrientation = getWindowManager().getDefaultDisplay().getRotation();
             totalRotation = getRotation(characteristics, deviceOrientation);
@@ -203,9 +208,7 @@ public class CameraActivity extends AppCompatActivity {
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            mediaRecorder.setOutputFile(file);
-        }
+        mediaRecorder.setOutputFile(file);
         mediaRecorder.setVideoEncodingBitRate(1000000);
         mediaRecorder.setVideoFrameRate(30);
         mediaRecorder.setVideoSize(videoSize.getWidth(), videoSize.getHeight());
@@ -249,7 +252,6 @@ public class CameraActivity extends AppCompatActivity {
                         @Override
                         public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
                             super.onCaptureCompleted(session, request, result);
-                            showMessage("S'ha guardat la imatge: " + file.getName());
                             createCameraPreview();
                         }
                     };
@@ -346,21 +348,40 @@ public class CameraActivity extends AppCompatActivity {
 
     private void setFile(boolean img) {
         file = null;
-        File folder = new File(CameraUtils.FOLDER_NAME);
+        folder = new File(Utils.FOLDER_NAME);
         if (!folder.exists()) {
             folder.mkdirs();
         }
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date());
         String imageFileName = img ? "IMG_" + timeStamp + ".jpg" : "REC_" + timeStamp + ".mp4";
-        file = new File(getExternalFilesDir(CameraUtils.FOLDER_NAME), "/" + imageFileName);
+        file = new File(getExternalFilesDir(Utils.FOLDER_NAME), "/" + imageFileName);
     }
 
     private void save(byte[] bytes) throws IOException {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            try (OutputStream output = Files.newOutputStream(file.toPath())) {
-                output.write(bytes);
+
+        AppImage img = new AppImage(
+                processImage(bytes),
+                13, // cambiar localizacion
+                31, // cambiar localizacion
+                LocalDateTime.now(),
+                CurrentUser.user.getEmail());
+        db.insert(img, task -> {
+            if (task.isSuccessful()) {
+                Messages.showMessage(CameraActivity.this, "Imagen guardada");
+                AppImageList.imageList.add(img);
+                Utils.orderAppImageList(AppImageList.imageList);
+                setThumbnail();
+            } else {
+                Messages.showMessage(CameraActivity.this, "Error al guardar la imagen");
             }
-        }
+        });
+    }
+
+    private Bitmap processImage(byte[] bytes) {
+        Matrix m = new Matrix();
+        m.postRotate(90);
+        Bitmap img = Utils.compress(Utils.getBitmap(bytes));
+        return Bitmap.createBitmap(img, 0, 0, img.getWidth(), img.getHeight(), m, true);
     }
 
     private boolean isStoragePermissionGranted() {
@@ -372,31 +393,16 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void setThumbnail() {
-        ArrayList<String> paths = CameraUtils.getImagePaths(this);
-        Bitmap thumbnail = null;
-        if (paths.size() > 0) {
-            String path = paths.get(0);
-            Bitmap image;
-            if (path.endsWith(".mp4")) {
-                image = ThumbnailUtils.createVideoThumbnail(path, MediaStore.Images.Thumbnails.MINI_KIND);
+        db.get(task -> {
+            if (task.isSuccessful()) {
+                ArrayList<AppImage> imgList = db.collectionToAppImageList(task.getResult());
+                if (imgList.size() > 0) {
+                    CameraActivity.this.runOnUiThread(() -> btnOpenGallery.setImageBitmap(imgList.get(0).getThumbnail()));
+                }
             } else {
-                Matrix m = new Matrix();
-                m.postRotate(90);
-                image = BitmapFactory.decodeFile(path);
-                image = Bitmap.createBitmap(image,
-                        0,
-                        0,
-                        image.getWidth(),
-                        image.getHeight(),
-                        m,
-                        true);
+                Messages.showMessage(CameraActivity.this, "error en getAll");
             }
-            thumbnail = Bitmap.createScaledBitmap(image,
-                    CameraUtils.THUBNAIL_SIZE.getWidth(),
-                    CameraUtils.THUBNAIL_SIZE.getHeight(),
-                    true);
-        }
-        btnOpenGallery.setImageBitmap(thumbnail);
+        });
     }
 
     private void changeVideoButton(boolean stop) {
@@ -410,7 +416,8 @@ public class CameraActivity extends AppCompatActivity {
 
 
     private Size chooseSize(Size[] choices, int width, int height) {
-        for (Size size : choices) {
+        for (int i = 0; i < choices.length; i++) {
+            Size size = choices[i];
             if (size.getWidth() <= width && size.getHeight() <= height) {
                 return size;
             }
@@ -419,7 +426,7 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void openGallery() {
-        startActivity(new Intent(CameraActivity.this, GallerySliderActivity.class));
+        startActivity(new Intent(CameraActivity.this, GalleryActivity.class));
     }
 
     private void showMessage(String message) {
@@ -450,6 +457,7 @@ public class CameraActivity extends AppCompatActivity {
             orientations.put(Surface.ROTATION_270, 270);
 
             mediaPlayer = new MediaPlayer();
+            db = new AppImageCRUD(CurrentUser.user.getEmail());
 
             setThumbnail();
         } catch (Exception e) {

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -38,30 +39,13 @@ public class GalleryPagerAdapter extends PagerAdapter {
     @NonNull
     @Override
     public Object instantiateItem(@NonNull ViewGroup container, int position) {
-//        View itemView = layoutInflater.inflate(R.layout.gallery_item, container, false);
-//        AppImage appimage = images.get(position);
-//        ImageView imageView = itemView.findViewById(R.id.galleryImage);
-//        Bitmap bitmap;
-//        if (appimage.endsWith(".mp4")) {
-//            ImageButton btnPlay = itemView.findViewById(R.id.btnPlay);
-//            btnPlay.setVisibility(View.VISIBLE);
-//            btnPlay.setOnClickListener(l -> {
-//                Intent i = new Intent(context, VideoActivity.class);
-//                i.putExtra("path", path);
-//                context.startActivity(i);
-//            });
-//            bitmap = ThumbnailUtils.createVideoThumbnail(path, MediaStore.Images.Thumbnails.FULL_SCREEN_KIND);
-//        } else {
-//            Bitmap img = BitmapFactory.decodeFile(path);
-//            Matrix matrix = new Matrix();
-//            matrix.postRotate(90);
-//            bitmap = Bitmap.createBitmap(img, 0, 0, img.getWidth(), img.getHeight(), matrix, true);
-//        }
-//        imageView.setImageBitmap(bitmap);
-//        imageView.setContentDescription(path);
-//        container.addView(itemView);
-//        return itemView;
-        return layoutInflater.inflate(R.layout.gallery_item, container, false); // borrar
+        View itemView = layoutInflater.inflate(R.layout.gallery_item, container, false);
+        AppImage appimage = images.get(position);
+        ImageView imageView = itemView.findViewById(R.id.galleryImage);
+
+        imageView.setImageBitmap(appimage.getImage());
+        container.addView(itemView);
+        return itemView;
     }
 
     @Override
