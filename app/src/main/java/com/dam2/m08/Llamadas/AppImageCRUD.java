@@ -15,6 +15,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -91,6 +92,6 @@ public class AppImageCRUD {
         for (DocumentSnapshot doc : collection) {
             imageList.add(documentToAppImage(doc));
         }
-        return imageList;
+        return Utils.orderAppImageList(imageList);
     }
 }

@@ -7,6 +7,8 @@ import android.media.Image;
 import android.media.ThumbnailUtils;
 import android.util.Size;
 
+import com.dam2.m08.Objects.AppImage;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -14,11 +16,15 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Comparator;
 
 public class Utils {
     public static String FOLDER_NAME = "FotosCamera2";
 
     public static Size THUBNAIL_SIZE = new Size(75, 100);
+
+    public static int GRID_SIZE_SMALL = 3;
+    public static int GRID_SIZE_LARGE = 5;
 
     public static Bitmap getBitmap(String bytes) {
         return Utils.getBitmap(Base64.getDecoder().decode(bytes));
@@ -68,5 +74,10 @@ public class Utils {
         ByteArrayInputStream isBm = new ByteArrayInputStream(
                 baos.toByteArray());
         return BitmapFactory.decodeStream(isBm, null, null);
+    }
+
+    public static ArrayList<AppImage> orderAppImageList(ArrayList<AppImage> list) {
+        list.sort(Comparator.comparing(AppImage::getDate).reversed());
+        return list;
     }
 }

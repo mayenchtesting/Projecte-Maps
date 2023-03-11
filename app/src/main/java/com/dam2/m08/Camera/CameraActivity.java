@@ -30,16 +30,18 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-import com.dam2.m08.Camera.Gallery.GallerySliderActivity;
+import com.dam2.m08.AppImageList;
+import com.dam2.m08.Camera.Gallery.GalleryActivity;
 import com.dam2.m08.CurrentUser;
 import com.dam2.m08.Llamadas.AppImageCRUD;
-import com.dam2.m08.Objects.AppImage;
 import com.dam2.m08.Messages;
+import com.dam2.m08.Objects.AppImage;
 import com.dam2.m08.Utils;
 import com.example.projecte_maps.R;
 
@@ -65,6 +67,8 @@ public class CameraActivity extends AppCompatActivity {
     private ImageButton btnBack;
 
     private HashMap<Integer, Integer> orientations;
+
+    private String cameraId;
     private CameraDevice cameraDevice;
     private CameraCaptureSession cameraCaptureSession;
     private CaptureRequest.Builder captureRequestBuilder;
@@ -73,12 +77,13 @@ public class CameraActivity extends AppCompatActivity {
     private Size videoSize;
     private int totalRotation;
     private File file;
+    private File folder;
     private final int REQUEST_PERMISSION_CODE = 13;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
-
+    private AppImageCRUD db;
     private MediaPlayer mediaPlayer;
-    private final TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
+    private TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
         @Override
         public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) { openCamera(width, height); }
         @Override
@@ -104,8 +109,6 @@ public class CameraActivity extends AppCompatActivity {
         }
     };
 
-    AppImageCRUD db;
-
     private void startBackgroundThread() {
         mBackgroundThread = new HandlerThread("camera_background_thread");
         mBackgroundThread.start();
@@ -119,7 +122,7 @@ public class CameraActivity extends AppCompatActivity {
             mBackgroundThread = null;
             mBackgroundHandler = null;
         } catch (InterruptedException e) {
-            Messages.showMessage(this, e.getLocalizedMessage());
+            showMessage(e.getLocalizedMessage());
         }
     }
 
@@ -135,7 +138,7 @@ public class CameraActivity extends AppCompatActivity {
         }
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
-            String cameraId = getFirstForwardCamera(manager);
+            cameraId = getFirstForwardCamera(manager);
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
             int deviceOrientation = getWindowManager().getDefaultDisplay().getRotation();
             totalRotation = getRotation(characteristics, deviceOrientation);
@@ -153,7 +156,7 @@ public class CameraActivity extends AppCompatActivity {
                 //createMediaRecorder();
             }
         } catch (CameraAccessException e) {
-            Messages.showMessage(this, e.getLocalizedMessage());
+            showMessage(e.getLocalizedMessage());
         }
     }
 
@@ -177,30 +180,30 @@ public class CameraActivity extends AppCompatActivity {
 
                     @Override
                     public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-                        Messages.showMessage(CameraActivity.this, "Error en la configuració de la camera");
+                        showMessage("Error en la configuració de la camera");
                     }
                 };
                 cameraDevice.createCaptureSession(Collections.singletonList(surface), stateCallback, null);
             }
         } catch (CameraAccessException e) {
-            Messages.showMessage(this, e.getLocalizedMessage());
+            showMessage(e.getLocalizedMessage());
         }
     }
 
     private void updatePreview() {
         if (cameraDevice == null) {
-            Messages.showMessage(this, "Error amb la preview de la imatge.");
+            showMessage("Error amb la preview de la imatge.");
         }
         captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
         try {
             cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
         } catch (CameraAccessException e) {
-            Messages.showMessage(this, e.getLocalizedMessage());
+            showMessage(e.getLocalizedMessage());
         }
     }
 
     private void createMediaRecorder() throws IOException {
-        setFile();
+        setFile(false);
         mediaRecorder = new MediaRecorder();
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -222,7 +225,8 @@ public class CameraActivity extends AppCompatActivity {
                 btnTakePhoto.setEnabled(false);
             }
             if (isStoragePermissionGranted()) {
-                try (ImageReader reader = ImageReader.newInstance(imageSize.getWidth(), imageSize.getHeight(), ImageFormat.JPEG, 1)) {
+                try {
+                    ImageReader reader = ImageReader.newInstance(imageSize.getWidth(), imageSize.getHeight(), ImageFormat.JPEG, 1);
                     List<Surface> outputSurfaces = new ArrayList<>(2);
                     outputSurfaces.add(reader.getSurface());
                     outputSurfaces.add(new Surface(textureView.getSurfaceTexture()));
@@ -231,14 +235,16 @@ public class CameraActivity extends AppCompatActivity {
                     captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
                     int rotation = getWindowManager().getDefaultDisplay().getRotation();
                     captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, orientations.get(rotation));
+                    setFile(true);
                     ImageReader.OnImageAvailableListener readerListener = r -> {
                         try (Image image = reader.acquireLatestImage()) {
                             ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                             byte[] bytes = new byte[buffer.capacity()];
                             buffer.get(bytes);
                             save(bytes);
+                            runOnUiThread(this::setThumbnail);
                         } catch (IOException e) {
-                            Messages.showMessage(this, e.getLocalizedMessage());
+                            showMessage(e.getLocalizedMessage());
                         }
                     };
                     reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
@@ -255,13 +261,13 @@ public class CameraActivity extends AppCompatActivity {
                             try {
                                 session.capture(captureBuilder.build(), captureCallback, mBackgroundHandler);
                             } catch (CameraAccessException e) {
-                                Messages.showMessage(CameraActivity.this, e.getLocalizedMessage());
+                                showMessage(e.getLocalizedMessage());
                             }
                         }
 
                         @Override
                         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-                            Messages.showMessage(CameraActivity.this, "Error en la configuració de la camera");
+                            showMessage("Error en la configuració de la camera");
                             createCameraPreview();
                         }
                     };
@@ -269,7 +275,7 @@ public class CameraActivity extends AppCompatActivity {
                     mediaPlayer = MediaPlayer.create(this, R.raw.photo_sound);
                     mediaPlayer.start();
                 } catch (CameraAccessException e) {
-                    Messages.showMessage(this, e.getLocalizedMessage());
+                    showMessage(e.getLocalizedMessage());
                 }
             }
         }
@@ -301,7 +307,7 @@ public class CameraActivity extends AppCompatActivity {
 
                     @Override
                     public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-                        Messages.showMessage(CameraActivity.this, "Error en la configuració de la camera");
+                        showMessage("Error en la configuració de la camera");
                     }
                 };
                 cameraDevice.createCaptureSession(Arrays.asList(previewSurface, recordSurface), stateCallback, null);
@@ -310,7 +316,7 @@ public class CameraActivity extends AppCompatActivity {
                 mediaPlayer.start();
             }
         } catch (IOException | CameraAccessException e) {
-            Messages.showMessage(this, e.getLocalizedMessage());
+            showMessage(e.getLocalizedMessage());
         }
     }
 
@@ -340,33 +346,42 @@ public class CameraActivity extends AppCompatActivity {
         return manager.getCameraIdList()[0];
     }
 
-    private void setFile() {
+    private void setFile(boolean img) {
         file = null;
-        File folder = new File(Utils.FOLDER_NAME);
+        folder = new File(Utils.FOLDER_NAME);
         if (!folder.exists()) {
             folder.mkdirs();
         }
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date());
-        String imageFileName = "REC_" + timeStamp + ".mp4";
+        String imageFileName = img ? "IMG_" + timeStamp + ".jpg" : "REC_" + timeStamp + ".mp4";
         file = new File(getExternalFilesDir(Utils.FOLDER_NAME), "/" + imageFileName);
     }
 
     private void save(byte[] bytes) throws IOException {
-        // localizar
+
         AppImage img = new AppImage(
-                Utils.compress(Utils.getBitmap(bytes)),
+                processImage(bytes),
                 13, // cambiar localizacion
                 31, // cambiar localizacion
                 LocalDateTime.now(),
                 CurrentUser.user.getEmail());
         db.insert(img, task -> {
-                    if (task.isSuccessful()) {
-                        Messages.showMessage(CameraActivity.this, "Imagen guardada");
-                        setThumbnail();
-                    } else {
-                        Messages.showMessage(CameraActivity.this, "Error al guardar la imagen");
-                    }
-                });
+            if (task.isSuccessful()) {
+                Messages.showMessage(CameraActivity.this, "Imagen guardada");
+                AppImageList.imageList.add(img);
+                Utils.orderAppImageList(AppImageList.imageList);
+                setThumbnail();
+            } else {
+                Messages.showMessage(CameraActivity.this, "Error al guardar la imagen");
+            }
+        });
+    }
+
+    private Bitmap processImage(byte[] bytes) {
+        Matrix m = new Matrix();
+        m.postRotate(90);
+        Bitmap img = Utils.compress(Utils.getBitmap(bytes));
+        return Bitmap.createBitmap(img, 0, 0, img.getWidth(), img.getHeight(), m, true);
     }
 
     private boolean isStoragePermissionGranted() {
@@ -382,18 +397,12 @@ public class CameraActivity extends AppCompatActivity {
             if (task.isSuccessful()) {
                 ArrayList<AppImage> imgList = db.collectionToAppImageList(task.getResult());
                 if (imgList.size() > 0) {
-                    imgList.sort(Comparator.comparing(AppImage::getDate).reversed());
-                    Bitmap img = imgList.get(0).getThumbnail();
-                    Matrix m = new Matrix();
-                    m.postRotate(90);
-                    Bitmap thumbnail = Bitmap.createBitmap(img, 0, 0, img.getWidth(), img.getHeight(), m, true);
-                    CameraActivity.this.runOnUiThread(() -> btnOpenGallery.setImageBitmap(thumbnail));
+                    CameraActivity.this.runOnUiThread(() -> btnOpenGallery.setImageBitmap(imgList.get(0).getThumbnail()));
                 }
             } else {
                 Messages.showMessage(CameraActivity.this, "error en getAll");
             }
         });
-        
     }
 
     private void changeVideoButton(boolean stop) {
@@ -407,7 +416,8 @@ public class CameraActivity extends AppCompatActivity {
 
 
     private Size chooseSize(Size[] choices, int width, int height) {
-        for (Size size : choices) {
+        for (int i = 0; i < choices.length; i++) {
+            Size size = choices[i];
             if (size.getWidth() <= width && size.getHeight() <= height) {
                 return size;
             }
@@ -416,7 +426,11 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void openGallery() {
-        startActivity(new Intent(CameraActivity.this, GallerySliderActivity.class));
+        startActivity(new Intent(CameraActivity.this, GalleryActivity.class));
+    }
+
+    private void showMessage(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -447,7 +461,7 @@ public class CameraActivity extends AppCompatActivity {
 
             setThumbnail();
         } catch (Exception e) {
-            Messages.showMessage(this, e.getLocalizedMessage());
+            showMessage(e.getLocalizedMessage());
         }
     }
 
@@ -471,7 +485,7 @@ public class CameraActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_PERMISSION_CODE) {
             if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-                Messages.showMessage(this, "No pots utilitzar l'app sense otorgar-li permisos necessaris.");
+                showMessage("No pots utilitzar l'app sense otorgar-li permisos necessaris.");
                 finish();
             }
         }

@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.dam2.m08.Camera.CameraActivity;
+import com.dam2.m08.Llamadas.AppImageCRUD;
 import com.example.projecte_maps.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -82,6 +83,7 @@ public class LoginActivity extends AppCompatActivity
                     {
                         Messages.showMessage(LoginActivity.this, "L'usuari ha iniciat sessió correctament");
                         CurrentUser.user = mAuth.getCurrentUser();
+                        AppImageList.getImageList(new AppImageCRUD(CurrentUser.user.getEmail()));
                         startActivity(new Intent(LoginActivity.this, CameraActivity.class));
                     }
                     else{ Messages.showMessage(LoginActivity.this, "Error d'inici de sessió: " + task.getException().getMessage()); }
