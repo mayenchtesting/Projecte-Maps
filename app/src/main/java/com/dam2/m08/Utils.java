@@ -1,19 +1,30 @@
 package com.dam2.m08;
 
+import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.location.Location;
 import android.media.Image;
 import android.media.ThumbnailUtils;
 import android.util.Size;
 
+import androidx.core.app.ActivityCompat;
+
 import com.dam2.m08.Objects.AppImage;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Comparator;
@@ -22,6 +33,8 @@ public class Utils {
     public static String FOLDER_NAME = "FotosCamera2";
 
     public static Size THUBNAIL_SIZE = new Size(75, 100);
+
+    public static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
 
     public static int GRID_SIZE_SMALL = 3;
     public static int GRID_SIZE_LARGE = 5;
@@ -79,5 +92,13 @@ public class Utils {
     public static ArrayList<AppImage> orderAppImageList(ArrayList<AppImage> list) {
         list.sort(Comparator.comparing(AppImage::getDate).reversed());
         return list;
+    }
+
+    public static void getCurrentUserLocation(FusedLocationProviderClient client, Context context, OnCompleteListener<Location> onComplete) {
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions((Activity) context, new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, 0);
+            return;
+        }
+        client.getLastLocation().addOnCompleteListener(onComplete);
     }
 }

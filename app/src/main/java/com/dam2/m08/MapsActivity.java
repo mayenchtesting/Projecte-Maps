@@ -10,29 +10,30 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.location.Location;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.ImageButton;
 
+import com.dam2.m08.Camera.CameraActivity;
+import com.dam2.m08.Llamadas.AppImageCRUD;
+import com.dam2.m08.Objects.AppImage;
 import com.example.projecte_maps.R;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.example.projecte_maps.databinding.ActivityMapsBinding;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     Button btnLogOut;
+    ImageButton btnOpenCamera;
     private int ACCES_LOCATION_REQUEST_CODE = 10001;
     FusedLocationProviderClient fusedLocationProviderClient;
     FirebaseAuth mAuth;
@@ -52,9 +53,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        btnOpenCamera = findViewById(R.id.btnOpenCamera);
         btnLogOut = findViewById(R.id.btnLogout);
         mAuth = FirebaseAuth.getInstance();
 
+        btnOpenCamera.setOnClickListener(v -> startActivity(new Intent(MapsActivity.this, CameraActivity.class)));
         btnLogOut.setOnClickListener(view ->
         {
             mAuth.signOut();
@@ -63,7 +66,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
-    public void onMapReady(GoogleMap googleMap) {
+    public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
 
         // Marker
@@ -91,6 +94,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         ACCES_LOCATION_REQUEST_CODE);
             }
         }
+        AppImageCRUD db = new AppImageCRUD(CurrentUser.user.getEmail());
+        db.get(task -> {
+            if (task.isSuccessful()) {
+                AppImageList.imageList = db.collectionToAppImageList(task.getResult());
+                fillMap();
+            }
+        });
     }
 
     @SuppressLint("MissingPermission")
@@ -102,16 +112,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @SuppressLint("MissingPermission")
     private void zoomToUserLocation()
     {
-        Task<Location> locationTask = fusedLocationProviderClient.getLastLocation();
-        locationTask.addOnSuccessListener(new OnSuccessListener<Location>()
-        {
-            @Override
-            public void onSuccess(Location location)
-            {
-                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,20));
-                //mMap.addMarker(new MarkerOptions().position(latLng));
-            }
+        Utils.getCurrentUserLocation(fusedLocationProviderClient, this,
+                task -> {
+                    if (task.isSuccessful()) {
+                        LatLng latLng = new LatLng(task.getResult().getLatitude(), task.getResult().getLongitude());
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,20));
+                    } else {
+                        Messages.showMessage(MapsActivity.this, "Error al obtener la ubicación");
+                    }
         });
     }
 
@@ -129,11 +137,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    private void fillMap() {
+        for (AppImage img : AppImageList.imageList) {
+            addMarker(img.getLocation(), img.getThumbnail(), img.getDate().format(Utils.dtf));
+        }
+    }
 
-    private void creaMarcador(LatLng latLng, Bitmap bitmap)
+    private void addMarker(LatLng latLng, Bitmap bitmap, String title)
     {
         mMap.addMarker(new MarkerOptions()
                 .position(latLng)
-                .icon(BitmapDescriptorFactory.fromBitmap(bitmap)));
+                .icon(BitmapDescriptorFactory.fromBitmap(bitmap))
+                .title(title));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        AppImageCRUD db = new AppImageCRUD(CurrentUser.user.getEmail());
+        db.get(task -> {
+            if (task.isSuccessful()) {
+                AppImageList.imageList = db.collectionToAppImageList(task.getResult());
+                fillMap();
+            }
+        });
     }
 }

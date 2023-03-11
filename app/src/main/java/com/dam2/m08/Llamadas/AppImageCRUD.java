@@ -33,7 +33,6 @@ public class AppImageCRUD {
     private static final String FIELD_DATE = "date";
     private static final String FIELD_USER = "user";
 
-    private static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
     private final DateTimeFormatter dtfTimestamp = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     public AppImageCRUD(String username) {
@@ -50,9 +49,9 @@ public class AppImageCRUD {
         Map<String, Object> document = new HashMap<>();
         document.put(FIELD_ID, appImage.getId());
         //document.put(FIELD_THUMBNAIL, appImage.getImageString());
-        document.put(FIELD_LATITUDE, appImage.getLocation().getLatitude());
-        document.put(FIELD_LONGITUDE, appImage.getLocation().getLongitude());
-        document.put(FIELD_DATE, appImage.getDate().format(dtf));
+        document.put(FIELD_LATITUDE, appImage.getLocation().latitude);
+        document.put(FIELD_LONGITUDE, appImage.getLocation().longitude);
+        document.put(FIELD_DATE, appImage.getDate().format(Utils.dtf));
         document.put(FIELD_USER, appImage.getUser());
         document.put(FIELD_IMAGE, appImage.getImageString());
         db.collection(COLLECTION_NAME).document(USERNAME).collection(SUBCOLLECTION_NAME).document(appImage.getId()).set(document).addOnCompleteListener(onComplete);
@@ -74,7 +73,7 @@ public class AppImageCRUD {
         String id = document.getString(FIELD_ID);
         Bitmap image = Utils.getBitmap(document.getString(FIELD_IMAGE));
         //Bitmap thumbnail = Utils.getBitmap(document.getString(FIELD_THUMBNAIL));
-        LocalDateTime date = LocalDateTime.parse(document.getString(FIELD_DATE), dtf);
+        LocalDateTime date = LocalDateTime.parse(document.getString(FIELD_DATE), Utils.dtf);
         Double lat = document.getDouble(FIELD_LATITUDE);
         Double lon = document.getDouble(FIELD_LONGITUDE);
         String username = document.getString(FIELD_USER);

@@ -44,6 +44,8 @@ import com.dam2.m08.Messages;
 import com.dam2.m08.Objects.AppImage;
 import com.dam2.m08.Utils;
 import com.example.projecte_maps.R;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 
 import java.io.File;
 import java.io.IOException;
@@ -359,23 +361,30 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void save(byte[] bytes) throws IOException {
-
-        AppImage img = new AppImage(
-                processImage(bytes),
-                13, // cambiar localizacion
-                31, // cambiar localizacion
-                LocalDateTime.now(),
-                CurrentUser.user.getEmail());
-        db.insert(img, task -> {
-            if (task.isSuccessful()) {
-                Messages.showMessage(CameraActivity.this, "Imagen guardada");
-                AppImageList.imageList.add(img);
-                Utils.orderAppImageList(AppImageList.imageList);
-                setThumbnail();
-            } else {
-                Messages.showMessage(CameraActivity.this, "Error al guardar la imagen");
-            }
-        });
+        FusedLocationProviderClient client = LocationServices.getFusedLocationProviderClient(this);
+        Utils.getCurrentUserLocation(client, this,
+                task -> {
+                    if (task.isSuccessful()) {
+                        AppImage img = new AppImage(
+                                processImage(bytes),
+                                task.getResult().getLatitude(),
+                                task.getResult().getLongitude(),
+                                LocalDateTime.now(),
+                                CurrentUser.user.getEmail());
+                        db.insert(img, subtask -> {
+                            if (subtask.isSuccessful()) {
+                                Messages.showMessage(CameraActivity.this, "Imagen guardada");
+                                AppImageList.imageList.add(img);
+                                Utils.orderAppImageList(AppImageList.imageList);
+                                setThumbnail();
+                            } else {
+                                Messages.showMessage(CameraActivity.this, "Error al guardar la imagen");
+                            }
+                        });
+                    } else {
+                        Messages.showMessage(CameraActivity.this, "Error al obtener la ubicación");
+                    }
+                });
     }
 
     private Bitmap processImage(byte[] bytes) {

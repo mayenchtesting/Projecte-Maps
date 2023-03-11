@@ -1,15 +1,10 @@
 package com.dam2.m08.Objects;
 
 import android.graphics.Bitmap;
-import android.location.Location;
-
 import com.dam2.m08.Utils;
-import com.google.type.LatLng;
-import com.google.type.LatLngOrBuilder;
+import com.google.android.gms.maps.model.LatLng;
 
 import java.time.LocalDateTime;
-
-import io.grpc.okhttp.internal.Util;
 
 public class AppImage {
     private String id;
@@ -24,7 +19,7 @@ public class AppImage {
     public AppImage(Bitmap image, double latitude, double longitude, LocalDateTime date, String user) {
         this.image = image;
         thumbnail = Utils.getThumbnail(image);
-        location = buildLocation(latitude, longitude);
+        location = new LatLng(latitude, longitude);
         this.date = date;
         this.user = user;
     }
@@ -33,7 +28,7 @@ public class AppImage {
         this.id = id;
         this.image = image;
         this.thumbnail = Utils.getThumbnail(image);//thumbnail;
-        location = buildLocation(latitude, longitude);
+        location = new LatLng(latitude, longitude);
         this.date = date;
         this.user = user;
     }
@@ -94,7 +89,7 @@ public class AppImage {
     }
 
     public void setLocation(double latitude, double longitude) {
-        this.location = buildLocation(latitude, longitude);
+        this.location = new LatLng(latitude, longitude);
     }
 
     public LocalDateTime getDate() {
@@ -111,12 +106,5 @@ public class AppImage {
 
     public void setUser(String user) {
         this.user = user;
-    }
-
-    private LatLng buildLocation(double latitude, double longitude) {
-        LatLng.Builder latLngBuilder = LatLng.newBuilder();
-        latLngBuilder.setLatitude(latitude);
-        latLngBuilder.setLongitude(longitude);
-        return latLngBuilder.build();
     }
 }

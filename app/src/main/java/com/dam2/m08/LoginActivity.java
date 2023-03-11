@@ -76,7 +76,6 @@ public class LoginActivity extends AppCompatActivity
                     {
                         Messages.showMessage(LoginActivity.this, "L'usuari ha iniciat sessió correctament");
                         CurrentUser.user = mAuth.getCurrentUser();
-                        AppImageList.getImageList(new AppImageCRUD(CurrentUser.user.getEmail()));
                         startActivity(new Intent(LoginActivity.this, MapsActivity.class));
                     }
 
