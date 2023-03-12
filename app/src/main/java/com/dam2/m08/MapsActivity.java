@@ -94,13 +94,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         ACCES_LOCATION_REQUEST_CODE);
             }
         }
-        AppImageCRUD db = new AppImageCRUD(CurrentUser.user.getEmail());
-        db.get(task -> {
-            if (task.isSuccessful()) {
-                AppImageList.imageList = db.collectionToAppImageList(task.getResult());
-                fillMap();
-            }
-        });
+        fillMap();
     }
 
     @SuppressLint("MissingPermission")
@@ -138,9 +132,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void fillMap() {
-        for (AppImage img : AppImageList.imageList) {
-            addMarker(img.getLocation(), img.getThumbnail(), img.getDate().format(Utils.dtf));
-        }
+        AppImageCRUD db = new AppImageCRUD(CurrentUser.user.getEmail());
+        db.get(task -> {
+            if (task.isSuccessful()) {
+                AppImageList.imageList = db.collectionToAppImageList(task.getResult());
+                if (AppImageList.imageList.size() > 0) {
+                    for (AppImage img : AppImageList.imageList) {
+                        addMarker(img.getLocation(), img.getThumbnail(), img.getDate().format(Utils.dtf));
+                    }
+                }
+            }
+        });
     }
 
     private void addMarker(LatLng latLng, Bitmap bitmap, String title)
@@ -154,12 +156,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     protected void onResume() {
         super.onResume();
-        AppImageCRUD db = new AppImageCRUD(CurrentUser.user.getEmail());
-        db.get(task -> {
-            if (task.isSuccessful()) {
-                AppImageList.imageList = db.collectionToAppImageList(task.getResult());
-                fillMap();
-            }
-        });
+        fillMap();
     }
 }

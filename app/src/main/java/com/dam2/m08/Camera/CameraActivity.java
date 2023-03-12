@@ -183,7 +183,7 @@ public class CameraActivity extends AppCompatActivity {
 
                     @Override
                     public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-                        showMessage("Error en la configuració de la camera");
+                        showMessage("Error in camera configuration");
                     }
                 };
                 cameraDevice.createCaptureSession(Collections.singletonList(surface), stateCallback, null);
@@ -195,7 +195,7 @@ public class CameraActivity extends AppCompatActivity {
 
     private void updatePreview() {
         if (cameraDevice == null) {
-            showMessage("Error amb la preview de la imatge.");
+            showMessage("Error with camera preview");
         }
         captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
         try {
@@ -270,7 +270,7 @@ public class CameraActivity extends AppCompatActivity {
 
                         @Override
                         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-                            showMessage("Error en la configuració de la camera");
+                            showMessage("Error in camera configuration");
                             createCameraPreview();
                         }
                     };
@@ -310,7 +310,7 @@ public class CameraActivity extends AppCompatActivity {
 
                     @Override
                     public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-                        showMessage("Error en la configuració de la camera");
+                        showMessage("Error in camera configuration");
                     }
                 };
                 cameraDevice.createCaptureSession(Arrays.asList(previewSurface, recordSurface), stateCallback, null);
@@ -373,16 +373,16 @@ public class CameraActivity extends AppCompatActivity {
                                 CurrentUser.user.getEmail());
                         db.insert(img, subtask -> {
                             if (subtask.isSuccessful()) {
-                                Messages.showMessage(CameraActivity.this, "Imagen guardada");
+                                Messages.showMessage(this, "Image saved");
                                 AppImageList.imageList.add(img);
                                 Utils.orderAppImageList(AppImageList.imageList);
                                 setThumbnail();
                             } else {
-                                Messages.showMessage(CameraActivity.this, "Error al guardar la imagen");
+                                Messages.showMessage(CameraActivity.this, "Error saving image");
                             }
                         });
                     } else {
-                        Messages.showMessage(CameraActivity.this, "Error al obtener la ubicación");
+                        Messages.showMessage(CameraActivity.this, "Error obtaining location");
                     }
                 });
     }
@@ -410,7 +410,7 @@ public class CameraActivity extends AppCompatActivity {
                     CameraActivity.this.runOnUiThread(() -> btnOpenGallery.setImageBitmap(imgList.get(0).getThumbnail()));
                 }
             } else {
-                Messages.showMessage(CameraActivity.this, "error en getAll");
+                Messages.showMessage(CameraActivity.this, "Error loading images");
             }
         });
     }
@@ -425,7 +425,7 @@ public class CameraActivity extends AppCompatActivity {
     }
 
 
-    private Size chooseSize(Size[] choices, int width, int height) {
+    public static Size chooseSize(Size[] choices, int width, int height) {
         for (int i = 0; i < choices.length; i++) {
             Size size = choices[i];
             if (size.getWidth() <= width && size.getHeight() <= height) {
@@ -495,7 +495,7 @@ public class CameraActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_PERMISSION_CODE) {
             if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-                showMessage("No pots utilitzar l'app sense otorgar-li permisos necessaris.");
+                showMessage("You must grant necessary permissions.");
                 finish();
             }
         }
