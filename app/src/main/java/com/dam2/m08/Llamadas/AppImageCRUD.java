@@ -48,7 +48,6 @@ public class AppImageCRUD {
     public void update(AppImage appImage, OnCompleteListener<Void> onComplete) {
         Map<String, Object> document = new HashMap<>();
         document.put(FIELD_ID, appImage.getId());
-        //document.put(FIELD_THUMBNAIL, appImage.getImageString());
         document.put(FIELD_LATITUDE, appImage.getLocation().latitude);
         document.put(FIELD_LONGITUDE, appImage.getLocation().longitude);
         document.put(FIELD_DATE, appImage.getDate().format(Utils.dtf));

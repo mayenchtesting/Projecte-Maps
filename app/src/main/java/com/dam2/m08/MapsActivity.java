@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 
@@ -34,7 +35,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     Button btnLogOut;
     ImageButton btnOpenCamera;
-    private int ACCES_LOCATION_REQUEST_CODE = 10001;
+    private final int ACCES_LOCATION_REQUEST_CODE = 10001;
     FusedLocationProviderClient fusedLocationProviderClient;
     FirebaseAuth mAuth;
     private GoogleMap mMap;
@@ -55,6 +56,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         btnOpenCamera = findViewById(R.id.btnOpenCamera);
         btnLogOut = findViewById(R.id.btnLogout);
+        btnLogOut.setEnabled(false);
+        btnLogOut.setVisibility(View.INVISIBLE);
         mAuth = FirebaseAuth.getInstance();
 
         btnOpenCamera.setOnClickListener(v -> startActivity(new Intent(MapsActivity.this, CameraActivity.class)));
@@ -127,7 +130,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 enableUserLocation();
                 zoomToUserLocation();
             }
-            else {}
         }
     }
 
